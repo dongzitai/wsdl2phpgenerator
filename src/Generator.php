@@ -324,15 +324,18 @@ class Generator implements GeneratorInterface
     public function setLocations($wsdl)
     {
         $data = @file_get_contents($wsdl);
+        $urls = [];
         if ($data) {
             preg_match('/location=["\'](.*)["\']/', $data, $matches);
             if (isset($matches[1])) {
                 $location = new Location($matches[1]);
+                $urls[]=$matches[1];
                 $this->locations[] = $location;
             }
         }
         if (filter_var($wsdl, FILTER_VALIDATE_URL)) {
             $wsdl = preg_replace('/\?.*/', '', $wsdl);
+            if(\in_array($wsdl,$urls,true)) return;
             $location = new Location($wsdl);
             $this->locations[] = $location;
         }
