@@ -163,7 +163,7 @@ class Service implements ClassGenerator
   }' . PHP_EOL;
         $source .= '  $options = array_merge(' . var_export($this->config->get('soapClientOptions'), true) . ', $options);' . PHP_EOL;
         $source .= '  if (!$wsdl) {' . PHP_EOL;
-        $source .= '    $wsdl = \'' . $this->config->get('outputPath') . '\';' . PHP_EOL;
+        $source .= '    $wsdl = __DIR__.\'/' . $this->config->get('outputFile') . '\';' . PHP_EOL;
         $source .= '  }' . PHP_EOL;
 
 
@@ -237,7 +237,7 @@ class Service implements ClassGenerator
             $source .= '  $usernameToken = new \\SoapVar(array($usernameToken), SOAP_ENC_OBJECT, null, null, \'Security\', $namespace);'.PHP_EOL;
             $source .= '  $wssTokenHeader = new \\SoapHeader($namespace, \'Security\', $usernameToken);'.PHP_EOL;
             $source .= '  $this->__setSoapHeaders($wssTokenHeader);'.PHP_EOL;
-            
+
             $paramStr = '$wsSecurity';
 
             $function = new PhpFunction('private', $wsFunc, $paramStr, $source, $comment);
