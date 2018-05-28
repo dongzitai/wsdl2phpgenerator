@@ -171,7 +171,7 @@ class Service implements ClassGenerator
         $wsSecurity = $this->config->get('wsSecurity');
         $wsFunc = 'setSoapHeader';
 
-        $source .= '  if(!$wsSecurity){'.PHP_EOL;
+        $source .= '  if($wsSecurity){'.PHP_EOL;
         $source .= '    $this->setSoapHeader($wsSecurity);' . PHP_EOL;
         $source .= '  }' . PHP_EOL;
 
