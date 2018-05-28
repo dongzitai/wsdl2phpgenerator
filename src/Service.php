@@ -153,6 +153,7 @@ class Service implements ClassGenerator
         // Create the constructor
         $comment = new PhpDocComment();
         $comment->addParam(PhpDocElementFactory::getParam('string', 'wsdl', 'The wsdl file to use'));
+        $comment->addParam(PhpDocElementFactory::getParam('array', 'wsSecurity', 'A array of wsSecurity values'));
         $comment->addParam(PhpDocElementFactory::getParam('array', 'options', 'A array of config values'));
 
         $source = '
@@ -170,13 +171,13 @@ class Service implements ClassGenerator
         $wsSecurity = $this->config->get('wsSecurity');
         $wsFunc = 'setSoapHeader';
 
-        if($wsSecurity){
-            $source .= '  $this->'.$wsFunc.'('.var_export($wsSecurity,true).');' . PHP_EOL;
-        }
+        $source .= '  if(!$wsSecurity){'.PHP_EOL;
+        $source .= '    $this->setSoapHeader($wsSecurity);' . PHP_EOL;
+        $source .= '  }' . PHP_EOL;
 
         $source .= '  parent::__construct($wsdl, $options);' . PHP_EOL;
 
-        $function = new PhpFunction('public', '__construct', 'array $options = array(), $wsdl = null', $source, $comment);
+        $function = new PhpFunction('public', '__construct', 'array $options = array(), array $wsSecurity = array(), $wsdl = null', $source, $comment);
 
         // Add the constructor
         $this->class->addFunction($function);
