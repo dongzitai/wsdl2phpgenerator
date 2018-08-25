@@ -154,9 +154,21 @@ class Generator implements GeneratorInterface
 
             $operation = new Operation($function->getName(), $function->getParams(), $function->getDocumentation(), $function->getReturns());
             $name = $operation->getName();
-            $request = $operation->getParams()[$operation->getParamStringNoTypeHints()];
-            $returns = $operation->getReturns();
-            $this->methodKeys[$name] = ['soapIn' => $request, 'soapOut' => $returns];
+            $params = $operation->getParams();
+            $paramsIn = '';
+            $paramsOut = '';
+            // 如果请求参数没有type
+            if (!array_key_exists($operation->getParamStringNoTypeHints(), $params)) {
+                $paramsIn = [$operation->getParamStringNoTypeHints()];
+                $paramsOut = [$operation->getReturns()];
+                $request = $operation->getName();
+                $returns = $operation->getReturns();
+            } else {
+                $request = $operation->getParams()[$operation->getParamStringNoTypeHints()];
+                $returns = $operation->getReturns();
+            }
+            $this->methodKeys[$name] = ['soapIn' => $request, 'soapOut' => $returns,
+                'paramsIn'=>$paramsIn,'paramsOut'=>$paramsOut];
             $this->service->addOperation($operation);
         }
 
@@ -329,13 +341,13 @@ class Generator implements GeneratorInterface
             preg_match('/location=["\'](.*)["\']/', $data, $matches);
             if (isset($matches[1])) {
                 $location = new Location($matches[1]);
-                $urls[]=$matches[1];
+                $urls[] = strtolower($matches[1]);
                 $this->locations[] = $location;
             }
         }
         if (filter_var($wsdl, FILTER_VALIDATE_URL)) {
             $wsdl = preg_replace('/\?.*/', '', $wsdl);
-            if(\in_array($wsdl,$urls,true)) return;
+            if (\in_array(strtolower($wsdl), $urls, true)) return;
             $location = new Location($wsdl);
             $this->locations[] = $location;
         }
@@ -366,13 +378,17 @@ class Generator implements GeneratorInterface
         foreach ($this->methodKeys as $key => $value) {
             $inType = $value['soapIn'];
             $outType = $value['soapOut'];
-            if (!array_key_exists($inType, $types) || !array_key_exists($outType, $types)) {
-                continue;
-            }
             $method = new Method($inType, $outType);
-            $method->setParamsIn($types[$inType]->getMembers());
-            $method->setParamsOut($types[$outType]->getMembers());
-            $method->setName($key);
+            if (!array_key_exists($inType, $types) || !array_key_exists($outType, $types)) {
+                $method->setIsOrder(true);
+                $method->setParamsIn($value['paramsIn']??[]);
+                $method->setParamsOut($value['paramsOut']??[]);
+                $method->setName($key);
+            }else{
+                $method->setParamsIn($types[$inType]->getMembers());
+                $method->setParamsOut($types[$outType]->getMembers());
+                $method->setName($key);
+            }
             $this->methods[] = $method;
         }
     }
