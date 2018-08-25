@@ -42,6 +42,7 @@ class WsdlDocument extends SchemaDocument
 
         try {
             $soapClientClass = new \ReflectionClass($this->config->get('soapClientClass'));
+            ini_set('default_socket_timeout', 5);
             $this->soapClient = $soapClientClass->newInstance($wsdlUrl, $options);
             parent::__construct($config, $wsdlUrl); // we need to pass $config for proxy settings
         } catch (SoapFault $e) {
