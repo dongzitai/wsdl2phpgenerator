@@ -3,6 +3,7 @@
 /**
  * @package Wsdl2PhpGenerator
  */
+
 namespace Wsdl2PhpGenerator;
 
 use Wsdl2PhpGenerator\PhpSource\PhpClass;
@@ -89,7 +90,7 @@ class Service implements ClassGenerator
      */
     public function getOperation($operationName)
     {
-        return isset($this->operations[$operationName])? $this->operations[$operationName]: null;
+        return isset($this->operations[$operationName]) ? $this->operations[$operationName] : null;
     }
 
     /**
@@ -121,8 +122,9 @@ class Service implements ClassGenerator
      */
     public function getType($identifier)
     {
-        return isset($this->types[$identifier])? $this->types[$identifier]: null;
+        return isset($this->types[$identifier]) ? $this->types[$identifier] : null;
     }
+
     /**
      * Returns all types defined by the service.
      *
@@ -131,6 +133,43 @@ class Service implements ClassGenerator
     public function getTypes()
     {
         return $this->types;
+    }
+
+    /**
+     * delete return type
+     *
+     * @param string $identifier The identifier for the type.
+     */
+    public function removeType($identifier)
+    {
+        if (isset($this->types[$identifier])) {
+            $type = $this->types[$identifier];
+            if ($type->getBaseType() !== null) {
+                $this->removeType($type->getBaseType()->getIdentifier());
+            }
+            unset($this->types[$identifier]);
+        }
+    }
+
+    /**
+     * keep request types
+     *
+     * @param $identifiers array The identifiers of request types
+     * @return array
+     */
+    public function getKeepTypes($identifiers)
+    {
+        $types = [];
+        foreach ($identifiers as $identifier){
+            if (isset($this->types[$identifier])) {
+                $type = $this->types[$identifier];
+                $types[] = $type;
+                if ($type->getBaseType() !== null) {
+                    $types = array_merge($types, $this->getKeepTypes([$type->getBaseType()->getIdentifier()]));
+                }
+            }
+        }
+        return $types;
     }
 
     /**
@@ -171,7 +210,7 @@ class Service implements ClassGenerator
         $wsSecurity = $this->config->get('wsSecurity');
         $wsFunc = 'setSoapHeader';
 
-        $source .= '  if($wsSecurity){'.PHP_EOL;
+        $source .= '  if($wsSecurity){' . PHP_EOL;
         $source .= '    $this->setSoapHeader($wsSecurity);' . PHP_EOL;
         $source .= '  }' . PHP_EOL;
 
@@ -223,21 +262,21 @@ class Service implements ClassGenerator
         }
 
         // Add WS-Security
-        if($wsSecurity){
+        if ($wsSecurity) {
 
             $comment = new PhpDocComment('add ws-security header');
 
             $comment->addParam(PhpDocElementFactory::getParam('array', 'wsSecurity', 'ws-security config'));
 
-            $source = '  $username = $wsSecurity[\'username\'];'.PHP_EOL;
-            $source .= '  $password = $wsSecurity[\'password\'];'.PHP_EOL;
-            $source .= '  $namespace = $wsSecurity[\'namespace\'];'.PHP_EOL;
-            $source .= '  $username = new \\SoapVar($username, XSD_STRING, null, null, \'Username\', $namespace);'.PHP_EOL;
-            $source .= '  $password = new \\SoapVar($password, XSD_STRING, null, null, \'Password\', $namespace);'.PHP_EOL;
-            $source .= '  $usernameToken = new \\SoapVar(array($username, $password), SOAP_ENC_OBJECT, null, null, \'UsernameToken\', $namespace);'.PHP_EOL;
-            $source .= '  $usernameToken = new \\SoapVar(array($usernameToken), SOAP_ENC_OBJECT, null, null, \'Security\', $namespace);'.PHP_EOL;
-            $source .= '  $wssTokenHeader = new \\SoapHeader($namespace, \'Security\', $usernameToken);'.PHP_EOL;
-            $source .= '  $this->__setSoapHeaders($wssTokenHeader);'.PHP_EOL;
+            $source = '  $username = $wsSecurity[\'username\'];' . PHP_EOL;
+            $source .= '  $password = $wsSecurity[\'password\'];' . PHP_EOL;
+            $source .= '  $namespace = $wsSecurity[\'namespace\'];' . PHP_EOL;
+            $source .= '  $username = new \\SoapVar($username, XSD_STRING, null, null, \'Username\', $namespace);' . PHP_EOL;
+            $source .= '  $password = new \\SoapVar($password, XSD_STRING, null, null, \'Password\', $namespace);' . PHP_EOL;
+            $source .= '  $usernameToken = new \\SoapVar(array($username, $password), SOAP_ENC_OBJECT, null, null, \'UsernameToken\', $namespace);' . PHP_EOL;
+            $source .= '  $usernameToken = new \\SoapVar(array($usernameToken), SOAP_ENC_OBJECT, null, null, \'Security\', $namespace);' . PHP_EOL;
+            $source .= '  $wssTokenHeader = new \\SoapHeader($namespace, \'Security\', $usernameToken);' . PHP_EOL;
+            $source .= '  $this->__setSoapHeaders($wssTokenHeader);' . PHP_EOL;
 
             $paramStr = '$wsSecurity';
 
@@ -258,5 +297,13 @@ class Service implements ClassGenerator
     public function addOperation(Operation $operation)
     {
         $this->operations[$operation->getName()] = $operation;
+    }
+
+    /**
+     * @param $types
+     */
+    public function setTypes($types)
+    {
+        $this->types = $types;
     }
 }

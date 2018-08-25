@@ -82,8 +82,9 @@ class Generator implements GeneratorInterface
      *
      * @param ConfigInterface $config The config to use for generation
      * @param bool $parseOnly
+     * @param bool $isReturnInstance
      */
-    public function generate(ConfigInterface $config, $parseOnly = false)
+    public function generate(ConfigInterface $config, $parseOnly = false, $isReturnInstance = false)
     {
         $this->config = $config;
 
@@ -107,10 +108,10 @@ class Generator implements GeneratorInterface
 
         if (is_array($wsdl)) {
             foreach ($wsdl as $ws) {
-                $this->load($ws);
+                $this->load($ws,$isReturnInstance);
             }
         } else {
-            $this->load($wsdl);
+            $this->load($wsdl,$isReturnInstance);
         }
 
         if ($parseOnly) {
@@ -126,7 +127,7 @@ class Generator implements GeneratorInterface
     /**
      * Load the wsdl file into php
      */
-    protected function load($wsdl)
+    protected function load($wsdl,$isReturnInstance)
     {
         $this->log('Loading the WSDL');
 
@@ -135,24 +136,26 @@ class Generator implements GeneratorInterface
         $this->types = array();
 
         $this->loadTypes();
-        $this->loadService();
+        $this->loadService($isReturnInstance);
         $this->loadMethods();
     }
 
     /**
      * Loads the service class
      */
-    protected function loadService()
+    protected function loadService($isReturnInstance)
     {
         $service = $this->wsdl->getService();
         $this->log('Starting to load service ' . $service->getName());
 
         $this->service = new Service($this->config, $service->getName(), $this->types, $service->getDocumentation());
 
+        $requestTypes = [];
         foreach ($this->wsdl->getOperations() as $function) {
             $this->log('Loading function ' . $function->getName());
 
-            $operation = new Operation($function->getName(), $function->getParams(), $function->getDocumentation(), $function->getReturns());
+            $operation = new Operation($function->getName(), $function->getParams(), $function->getDocumentation(),$function->getReturns());
+
             $name = $operation->getName();
             $params = $operation->getParams();
             $paramsIn = '';
@@ -162,15 +165,22 @@ class Generator implements GeneratorInterface
                 $paramsIn = [$operation->getParamStringNoTypeHints()];
                 $paramsOut = [$operation->getReturns()];
                 $request = $operation->getName();
-                $returns = $operation->getReturns();
+                $returns = $function->getReturns();
             } else {
                 $request = $operation->getParams()[$operation->getParamStringNoTypeHints()];
-                $returns = $operation->getReturns();
+                $returns = $function->getReturns();
+                // 不返回实例
+                if(!$isReturnInstance){
+                    $operation->setReturns('\stdClass');
+                    $requestTypes[] = $request;
+                }
             }
             $this->methodKeys[$name] = ['soapIn' => $request, 'soapOut' => $returns,
                 'paramsIn'=>$paramsIn,'paramsOut'=>$paramsOut];
             $this->service->addOperation($operation);
         }
+        $types = $this->service->getKeepTypes($requestTypes);
+        $this->service->setTypes($types);
 
         $this->log('Done loading service ' . $service->getName());
     }
@@ -376,17 +386,32 @@ class Generator implements GeneratorInterface
     {
         $types = $this->types;
         foreach ($this->methodKeys as $key => $value) {
-            $inType = $value['soapIn'];
-            $outType = $value['soapOut'];
-            $method = new Method($inType, $outType);
-            if (!array_key_exists($inType, $types) || !array_key_exists($outType, $types)) {
+            $inTypeKey = $value['soapIn'];
+            $outTypeKey = $value['soapOut'];
+            $method = new Method($inTypeKey, $outTypeKey);
+            if (!array_key_exists($inTypeKey, $types) || !array_key_exists($outTypeKey, $types)) {
                 $method->setIsOrder(true);
                 $method->setParamsIn($value['paramsIn']??[]);
                 $method->setParamsOut($value['paramsOut']??[]);
                 $method->setName($key);
             }else{
-                $method->setParamsIn($types[$inType]->getMembers());
-                $method->setParamsOut($types[$outType]->getMembers());
+                /** @var ComplexType $inType */
+                $inType = $types[$inTypeKey];
+                $paramsInMembers = $inType->getMembers();
+                $inTypeBaseType = $inType->getBaseType();
+                if($inTypeBaseType !== null){
+                    $paramsInMembers = array_merge($paramsInMembers,$inTypeBaseType->getMembers());
+                }
+                $method->setParamsIn($paramsInMembers);
+
+                /** @var ComplexType $outType */
+                $outType = $types[$outTypeKey];
+                $paramsOutMembers = $outType->getMembers();
+                $outTypeBaseType = $outType->getBaseType();
+                if($outTypeBaseType !== null){
+                    $paramsOutMembers = array_merge($paramsOutMembers,$outTypeBaseType->getMembers());
+                }
+                $method->setParamsOut($paramsOutMembers);
                 $method->setName($key);
             }
             $this->methods[] = $method;

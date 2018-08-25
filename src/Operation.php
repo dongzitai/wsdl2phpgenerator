@@ -189,4 +189,12 @@ class Operation
             }
         }
     }
+
+    /**
+     * @param $returns
+     */
+    public function setReturns($returns)
+    {
+        $this->returns = $returns;
+    }
 }
