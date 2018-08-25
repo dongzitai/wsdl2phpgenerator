@@ -1,151 +1,72 @@
 <?php
 /**
- * @package Wsdl2PhpGenerator
+ * User: liuende
+ * Date: 2018/4/18
+ * Time: 上午10:07
  */
 
 namespace Wsdl2PhpGenerator;
 
-/**
- * User: liuende
- * Date: 2018/4/13
- * Time: 上午11:00
- */
-class Method implements \JsonSerializable
+
+class Location implements \JsonSerializable
 {
     /**
-     * @var string The name of the method
+     * @var String $url
      */
-    private $name;
+    private $url;
 
     /**
-     * @var string The name of the soapIn node
+     * @var boolean $isValid
      */
-    private $soapIn;
+    private $isValid;
 
     /**
-     * @var array An array with Variables
-     * @see Variable
+     * Location constructor.
+     * @param String $url
      */
-    private $paramsIn;
-
-    /**
-     * @var string A description of the soapOut node
-     */
-    private $soapOut;
-
-    /**
-     * @var array An array with Variables
-     */
-    private $paramsOut;
-
-    /**
-     * @var boolean a status to define params is order
-     */
-    private $isOrder;
-    /**
-     * Method constructor.
-     * @param string $soapIn
-     * @param string $soapOut
-     */
-    public function __construct($soapIn, $soapOut)
+    public function __construct($url)
     {
-        $this->soapIn = $soapIn;
-        $this->soapOut = $soapOut;
-        $this->setIsOrder(false);
+        $this->url = $url;
     }
 
 
     /**
-     * @return array
+     * @return String
      */
-    public function getParamsIn()
+    public function getUrl()
     {
-        return $this->paramsIn;
+        return $this->url;
     }
 
     /**
-     * @param array|Variable[] $paramsIn
+     * @param $url
      */
-    public function setParamsIn(array $paramsIn)
+    public function setUrl($url)
     {
-        foreach ($paramsIn as $param) {
-            if($param instanceof Variable){
-                $this->paramsIn[] = $param->getName();
-            }else{
-                $this->paramsIn[] = $param;
-            }
-        }
+        $this->url = $url;
     }
 
     /**
-     * @return string
+     * @return bool
      */
-    public function getSoapIn()
+    public function isValid()
     {
-        return $this->soapIn;
+        $ch = curl_init($this->url);
+        curl_setopt($ch, CURLOPT_NOBODY, true);
+        // 为了加快解析速度,超时时间为2秒
+        curl_setopt($ch,CURLOPT_CONNECTTIMEOUT,2);
+        curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        return $httpCode === 200;
     }
 
     /**
-     * @param $soapIn
+     * @param $isValid
      */
-    public function setSoapIn($soapIn)
+    public function setIsValid($isValid)
     {
-        $this->soapIn = $soapIn;
-    }
-
-    /**
-     * @return string
-     */
-    public function getSoapOut()
-    {
-        return $this->soapOut;
-    }
-
-    /**
-     * @param $soapOut
-     */
-    public function setSoapOut($soapOut)
-    {
-        $this->soapOut = $soapOut;
-    }
-
-
-    /**
-     * @return array
-     */
-    public function getParamsOut()
-    {
-        return $this->paramsOut;
-    }
-
-    /**
-     * @param array|Variable[] $paramsOut
-     */
-    public function setParamsOut(array $paramsOut)
-    {
-        foreach ($paramsOut as $param) {
-            if($param instanceof Variable){
-                $this->paramsOut[] = $param->getName();
-            }else{
-                $this->paramsOut[] = $param;
-            }
-        }
-    }
-
-    /**
-     * @return string
-     */
-    public function getName()
-    {
-        return $this->name;
-    }
-
-    /**
-     * @param $name
-     */
-    public function setName($name)
-    {
-        $this->name = $name;
+        $this->isValid = $isValid;
     }
 
 
@@ -158,28 +79,9 @@ class Method implements \JsonSerializable
      */
     public function jsonSerialize()
     {
-        return [
-            'name' => $this->getName(),
-            'soapIn' => $this->getSoapIn(),
-            'paramsIn' => $this->getParamsIn() ?? array(),
-            'soapOut' => $this->getSoapOut(),
-            'paramsOut' => $this->getParamsOut() ?? array()
-        ];
-    }
-
-    /**
-     * @return bool
-     */
-    public function isOrder()
-    {
-        return $this->isOrder;
-    }
-
-    /**
-     * @param $isOrder
-     */
-    public function setIsOrder($isOrder)
-    {
-        $this->isOrder = $isOrder;
+        return array(
+          'url'=>$this->getUrl(),
+          'isValid'=>$this->isValid()
+        );
     }
 }

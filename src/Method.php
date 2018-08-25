@@ -39,6 +39,10 @@ class Method implements \JsonSerializable
     private $paramsOut;
 
     /**
+     * @var boolean a status to define params is order
+     */
+    private $isOrder;
+    /**
      * Method constructor.
      * @param string $soapIn
      * @param string $soapOut
@@ -47,6 +51,7 @@ class Method implements \JsonSerializable
     {
         $this->soapIn = $soapIn;
         $this->soapOut = $soapOut;
+        $this->setIsOrder(false);
     }
 
 
@@ -59,12 +64,16 @@ class Method implements \JsonSerializable
     }
 
     /**
-     * @param Variable[] $paramsIn
+     * @param array|Variable[] $paramsIn
      */
     public function setParamsIn(array $paramsIn)
     {
         foreach ($paramsIn as $param) {
-            $this->paramsIn[] = $param->getName();
+            if($param instanceof Variable){
+                $this->paramsIn[] = $param->getName();
+            }else{
+                $this->paramsIn[] = $param;
+            }
         }
     }
 
@@ -110,12 +119,16 @@ class Method implements \JsonSerializable
     }
 
     /**
-     * @param Variable[] $paramsOut
+     * @param array|Variable[] $paramsOut
      */
     public function setParamsOut(array $paramsOut)
     {
         foreach ($paramsOut as $param) {
-            $this->paramsOut[] = $param->getName();
+            if($param instanceof Variable){
+                $this->paramsOut[] = $param->getName();
+            }else{
+                $this->paramsOut[] = $param;
+            }
         }
     }
 
@@ -152,5 +165,21 @@ class Method implements \JsonSerializable
             'soapOut' => $this->getSoapOut(),
             'paramsOut' => $this->getParamsOut() ?? array()
         ];
+    }
+
+    /**
+     * @return bool
+     */
+    public function isOrder()
+    {
+        return $this->isOrder;
+    }
+
+    /**
+     * @param $isOrder
+     */
+    public function setIsOrder($isOrder)
+    {
+        $this->isOrder = $isOrder;
     }
 }
