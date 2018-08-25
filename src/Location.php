@@ -53,8 +53,8 @@ class Location implements \JsonSerializable
     {
         $ch = curl_init($this->url);
         curl_setopt($ch, CURLOPT_NOBODY, true);
-        // 为了加快解析速度,超时时间为一秒
-        curl_setopt($ch,CURLOPT_CONNECTTIMEOUT,1);
+        // 为了加快解析速度,超时时间为2秒
+        curl_setopt($ch,CURLOPT_CONNECTTIMEOUT,2);
         curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
