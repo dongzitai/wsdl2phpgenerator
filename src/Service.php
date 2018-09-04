@@ -164,6 +164,13 @@ class Service implements ClassGenerator
             if (isset($this->types[$identifier])) {
                 $type = $this->types[$identifier];
                 $types[] = $type;
+                foreach ($type->getMembers() as $member){
+                    /**@var Variable $member */
+                    $name = $member->getType();
+                    if(isset($this->types[$name])){
+                        $types[] = $this->types[$name];
+                    }
+                }
                 if ($type->getBaseType() !== null) {
                     $types = array_merge($types, $this->getKeepTypes([$type->getBaseType()->getIdentifier()]));
                 }
