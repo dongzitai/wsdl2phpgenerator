@@ -391,8 +391,14 @@ class Generator implements GeneratorInterface
             $method = new Method($inTypeKey, $outTypeKey);
             if (!array_key_exists($inTypeKey, $types) || !array_key_exists($outTypeKey, $types)) {
                 $method->setIsOrder(true);
-                $method->setParamsIn($value['paramsIn']??[]);
-                $method->setParamsOut($value['paramsOut']??[]);
+                if(!\is_array($value['paramsIn'])){
+                    $value['paramsIn'] = array();
+                }
+                if(!\is_array($value['paramsOut'])){
+                    $value['paramsOut'] = array();
+                }
+                $method->setParamsIn($value['paramsIn']);
+                $method->setParamsOut($value['paramsOut']);
                 $method->setName($key);
             }else{
                 /** @var ComplexType $inType */
