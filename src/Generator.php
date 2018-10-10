@@ -389,27 +389,33 @@ class Generator implements GeneratorInterface
             $inTypeKey = $value['soapIn'];
             $outTypeKey = $value['soapOut'];
             $method = new Method($inTypeKey, $outTypeKey);
-            if (!array_key_exists($inTypeKey, $types) || !array_key_exists($outTypeKey, $types)) {
+            $method->setName($key);
+
+            // in
+            if (!array_key_exists($inTypeKey, $types)) {
                 $method->setIsOrder(true);
                 if(!\is_array($value['paramsIn'])){
                     $value['paramsIn'] = array();
                 }
-                if(!\is_array($value['paramsOut'])){
-                    $value['paramsOut'] = array();
-                }
                 $method->setParamsIn($value['paramsIn']);
-                $method->setParamsOut($value['paramsOut']);
-                $method->setName($key);
-            }else{
+            }else {
                 /** @var ComplexType $inType */
                 $inType = $types[$inTypeKey];
                 $paramsInMembers = $inType->getMembers();
                 $inTypeBaseType = $inType->getBaseType();
-                if($inTypeBaseType !== null){
-                    $paramsInMembers = array_merge($paramsInMembers,$inTypeBaseType->getMembers());
+                if ($inTypeBaseType !== null) {
+                    $paramsInMembers = array_merge($paramsInMembers, $inTypeBaseType->getMembers());
                 }
                 $method->setParamsIn($paramsInMembers);
+            }
 
+            //out
+            if (!array_key_exists($outTypeKey, $types)) {
+                if(!\is_array($value['paramsOut'])){
+                    $value['paramsOut'] = array();
+                }
+                $method->setParamsOut($value['paramsOut']);
+            }else {
                 /** @var ComplexType $outType */
                 $outType = $types[$outTypeKey];
                 $paramsOutMembers = $outType->getMembers();
@@ -418,8 +424,8 @@ class Generator implements GeneratorInterface
                     $paramsOutMembers = array_merge($paramsOutMembers,$outTypeBaseType->getMembers());
                 }
                 $method->setParamsOut($paramsOutMembers);
-                $method->setName($key);
             }
+
             $this->methods[] = $method;
         }
     }
