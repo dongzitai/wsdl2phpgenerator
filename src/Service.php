@@ -269,7 +269,7 @@ class Service implements ClassGenerator
         }
 
         // Add WS-Security
-        if ($wsSecurity) {
+        //if ($wsSecurity) {
 
             $comment = new PhpDocComment('add ws-security header');
 
@@ -292,7 +292,7 @@ class Service implements ClassGenerator
             if ($this->class->functionExists($function->getIdentifier()) == false) {
                 $this->class->addFunction($function);
             }
-        }
+        //}
 
     }
 
