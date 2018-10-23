@@ -287,8 +287,13 @@ class ComplexType extends Type
             if (!empty($type) && $includeType) {
                 $parameterString = $type . ' ' . $parameterString;
             }
+
             if ($defaultNull) {
-                $parameterString .= ' = null';
+                if($type === 'array'){
+                    $parameterString .= ' = []';
+                }else{
+                    $parameterString .= ' = null';
+                }
             }
             $parameterStrings[] = $parameterString;
         }
